@@ -1,0 +1,9 @@
+# Ignore all data files in output and input directories
+EPA_output/*
+fastree_output/*
+pmoa_reads/*
+
+# But keep the directory placeholders
+!EPA_output/.gitkeep
+!fastree_output/.gitkeep
+!pmoa_reads/.gitkeep
