@@ -1,0 +1,5 @@
+PmoA-CP024846.1_1958 - Methylocapsa gorgona (Alphaproteobacteria)
+PmoA-JAFMSB010000011.1_8 - Methylocapsa sp017353815 (Alphaproteobacteria)
+PmoA-NZ_FOSN01000007.1_164 - Methylocapsa palsarum (Alphaproteobacteria)
+PmoA-NZ_KE386496.1_3490 - Methylocapsa acidiphila (Alphaproteobacteria)
+PmoA-PLUZ01000456.1_14 - Methylocapsa sp003162995 (Alphaproteobacteria)

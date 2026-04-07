@@ -246,7 +246,7 @@ echo ""
 echo "STEP 7: Running EPA-ng phylogenetic placement..."
 
 epa-ng --tree ${REF_ALPHA_TREE} \
-    --ref-msa ${OUTDIR}/epa_alpha_output/reference.fasta \
+    --ref-msa ${REF_ALPHA_MSA} \
     --query   ${OUTDIR}/epa_alpha_output/query.fasta \
     --outdir  ${OUTDIR}/epa_alpha_output \
     --redo --threads 8 --model LG+G
@@ -254,7 +254,7 @@ epa-ng --tree ${REF_ALPHA_TREE} \
 echo "  USCalpha placement complete: $(ls ${OUTDIR}/epa_alpha_output/*.jplace 2>/dev/null)"
 
 epa-ng --tree ${REF_GAMMA_TREE} \
-    --ref-msa ${OUTDIR}/epa_gamma_output/reference.fasta \
+    --ref-msa ${REF_GAMMA_MSA} \
     --query   ${OUTDIR}/epa_gamma_output/query.fasta \
     --outdir  ${OUTDIR}/epa_gamma_output \
     --redo --threads 8 --model LG+G
