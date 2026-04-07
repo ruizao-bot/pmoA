@@ -17,7 +17,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate fungene_py2
 
 # --- Define Paths ---
-export OUTDIR=/rds/general/user/jc224/home/pmoA_output/fastree_output
+export OUTDIR=/rds/general/user/jc224/home/pmoA_output/results/fastree_output
 export REFDIR=/rds/general/user/jc224/home/meta/Data/reference_dbs/DIAMOND
 export REFERENCE=${REFDIR}/Particulate_methane_monooxygenase_PmoA_Feb2024.faa
 

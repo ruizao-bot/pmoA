@@ -1,9 +1,21 @@
 # Ignore all data files in output and input directories
-EPA_output/*
-fastree_output/*
+results/EPA_output/*
+results/fastree_output/*
 pmoa_reads/*
 logs/*
+
 # But keep the directory placeholders
-!EPA_output/.gitkeep
-!fastree_output/.gitkeep
+!results/EPA_output/.gitkeep
+!results/fastree_output/.gitkeep
 !pmoa_reads/.gitkeep
+
+# Keep scripts and docs
+!scripts/
+!results/
+
+# Ignore backup files
+*.bak
+*.backup
+*.out
+*.err
+README.md.bak*

@@ -1,7 +1,7 @@
 # pmoA USC Phylogenetic Placement Pipeline
 
 **Author:** jc224  
-**Date:** March 2026
+**Last Updated:** April 2026
 
 ## Overview
 
@@ -10,8 +10,8 @@ for the USCα and USCγ clades of atmospheric methane oxidisers.
 
 | Pipeline | Script | Run | Purpose |
 |----------|--------|-----|---------|
-| 1 | `fastree.sh`  | Once | Build reference trees from curated PmoA sequences |
-| 2 | `EPA-ng.sh`   | Per sample | Place metagenomic reads onto reference trees |
+| 1 | `scripts/fastree.sh`  | Once | Build reference trees from curated PmoA sequences |
+| 2 | `scripts/EPA-ng.sh`   | Per sample | Place metagenomic reads onto reference trees |
 
 ---
 
@@ -23,14 +23,15 @@ protein database. Run **once**; reuse the outputs for every new metagenomic samp
 Only re-run if you update the reference database.
 
 ### Prerequisites
-- Modules: `MAFFT/7.520-GCC-12.3.0-with-extensions`, `FastTree/2.1.11-GCCcore-12.3.0`
-- Conda env: `fungene_py2` (Biopython required)
-- Reference database:
-  `meta/Data/reference_dbs/DIAMOND/Particulate_methane_monooxygenase_PmoA_Feb2024.faa`
+- **Modules**: `MAFFT/7.520-GCC-12.3.0-with-extensions`, `FastTree/2.1.11-GCCcore-12.3.0`
+- **Conda env**: `fungene_py2` (Biopython required)
+- **Reference database**:
+  `~/meta/Data/reference_dbs/DIAMOND/Particulate_methane_monooxygenase_PmoA_Feb2024.faa`
 
 ### Usage
 ```bash
-qsub fastree.sh
+cd /rds/general/user/jc224/home/pmoA_output
+qsub scripts/fastree.sh
 ```
 
 ### Steps
@@ -38,111 +39,108 @@ qsub fastree.sh
 2. **Align** — multiple sequence alignment with MAFFT (`--auto`)
 3. **Tree** — maximum likelihood trees with FastTree (LG + Γ model)
 
-### Output (`fastree_output/`)
+### Output (`results/fastree_output/`)
 | File | Used by |
 |------|---------|
 | `USCalpha_ref_only.fasta` | combined reference construction (Pipeline 2) |
 | `USCgamma_ref_only.fasta` | combined reference construction (Pipeline 2) |
-| `USCalpha_ref_aligned.fasta` | EPA-ng `--ref-msa` |
-| `USCgamma_ref_aligned.fasta` | EPA-ng `--ref-msa` |
+| `USCalpha_ref_aligned.fasta` | MAFFT `--add` template |
+| `USCgamma_ref_aligned.fasta` | MAFFT `--add` template |
 | `USCalpha_tree.nwk` | EPA-ng `--tree` |
 | `USCgamma_tree.nwk` | EPA-ng `--tree` |
-| `*_fasttree.log` | diagnostic logs |
 
 ---
 
 ## Pipeline 2 — Metagenomic Read Placement (`EPA-ng.sh`)
 
 ### Purpose
-Corrects frameshifts, translates, and phylogenetically places metagenomic pmoA reads
-onto the reference trees from Pipeline 1. Run once per sample.
+Places metagenomic pmoA reads onto the reference trees. Run once **per sample**.
 
 ### Prerequisites
-- Pipeline 1 outputs must exist in `fastree_output/`
-- Modules: `ANTLR/2.7.7-GCCcore-12.3.0-Java-11`, `epa-ng`
-- RDPTools (FrameBot) at `~/RDPTools/`
-- Conda env: `fungene_py2` (Biopython required)
-- Input reads: `pmoa_reads/<SAMPLE>_pmoA.fasta`
+- **Modules**: `ANTLR/2.7.7-GCCcore-12.3.0-Java-11`
+- **Conda env**: `fungene_py2`
+- **RDPTools**: `~/RDPTools` (FrameBot required)
+- **Pipeline 1 outputs**: must exist in `results/fastree_output/`
 
 ### Usage
 ```bash
 # Single sample
-qsub -v SAMPLE=53394 EPA-ng.sh
+qsub -v SAMPLE=53394 scripts/EPA-ng.sh
 
-# All samples
-for s in 53394 53395 53396 53397 53398 53399; do
-    qsub -v SAMPLE=$s EPA-ng.sh
+# Batch submit multiple samples
+for sample in 53394 53395 53396; do
+    qsub -v SAMPLE=${sample} scripts/EPA-ng.sh
 done
 ```
 
 ### Steps
-1. **FrameBot** — frameshift correction and translation (`-i 0.2`, `-l 50`, glocal)
-2. **Clean** — remove sequences containing internal stop codons (`*`)
-3. **Separate** — classify reads as USCα or USCγ via FrameBot STATS best-match
-4. **Extract** — filter clean proteins to per-clade FASTA files
-5. **Placement** — EPA-ng grafts reads onto reference trees (hmmer realignment, 8 threads)
+1. **FrameBot** — error-correct reads against combined USC reference (α + γ)
+2. **Stop codon filter** — remove internal stop codons from corrected proteins
+3. **Separate** — split USCα and USCγ reads by best-match to reference accession
+4. **Extract** — retrieve clean sequences for each clade
+5. **Align** — add query sequences to reference MSA with MAFFT `--add --keeplength`
+6. **Split** — separate ref and query for EPA-ng; fix PmoA- ID prefix mismatch
+7. **Place** — phylogenetic placement with EPA-ng (LG+Γ model)
 
-### Output (`EPA_output/`)
+### Interpreting Results
+
+**Success indicators:**
 ```
-EPA_output/
-├── USC_ref_combined.fasta               # shared FrameBot reference (built once)
-└── <SAMPLE>/
-    ├── framebot_USC_result_<SAMPLE>_corr_prot.fasta
-    ├── framebot_USC_result_<SAMPLE>_failed_nucl.fasta
-    ├── framebot_USC_result_<SAMPLE>_framebot.txt
-    ├── framebot_USC_clean_<SAMPLE>_prot.fasta
-    ├── USCalpha_<SAMPLE>_ids.txt
-    ├── USCgamma_<SAMPLE>_ids.txt
-    ├── USCalpha_<SAMPLE>_clean.fasta
-    ├── USCgamma_<SAMPLE>_clean.fasta
-    ├── epa_alpha_output/
-    │   └── epa_result.jplace
-    └── epa_gamma_output/
-        └── epa_result.jplace
+Pipeline 2 Complete: <timestamp>
+USCα sequences: XX
+USCγ sequences: YY
+Placement outputs: .jplace files created
 ```
 
-### Downstream analysis of `.jplace` files
-| Tool | Command |
-|------|---------|
-| gappa | `gappa examine graft --jplace-path *.jplace` |
-| iTOL | upload `.jplace` directly |
-| genesis | programmatic / R interface |
+**Check logs:**
+```bash
+# Standard output
+cat logs/<JOBID>.pbs-7.OU
 
-Filter by likelihood weight ratio (LWR) > 0.5 for high-confidence placements.
-
----
-
-## USC Clade Reference Accessions
-
-| Clade | Organism | Accession |
-|-------|----------|-----------|
-| USCα | *Methylocapsa acidiphila* | KE386496 |
-| USCα | *Methylocapsa gorgona* MG08 | CP024846 |
-| USCα | *Methylocapsa palsarum* | FOSN01000007 |
-| USCα | *Methylocapsa* sp017353815 | JAFMSB |
-| USCα | *Methylocapsa* sp003162995 | PLUZ01000456 |
-| USCγ | USCg-Taylor sp002007425 | MUGK01000060 |
-
+# Error log (should be minimal if successful)
+cat logs/<JOBID>.pbs-7.ER
+```
 ---
 
 ## Directory Structure
 
+**📁 Organized Directory Layout (Updated April 2026)**
+
+The pmoA_output directory has been reorganized for clarity:
+
 ```
 pmoA_output/
-├── fastree.sh              # Pipeline 1 — run once
-├── EPA-ng.sh               # Pipeline 2 — run per sample
-├── README.md               # this file
-├── pmoa_reads/             # input nucleotide reads
-│   └── <SAMPLE>_pmoA.fasta
-├── fastree_output/         # Pipeline 1 outputs (reference trees)
-│   ├── USCalpha_ref_aligned.fasta
-│   ├── USCgamma_ref_aligned.fasta
-│   ├── USCalpha_tree.nwk
-│   └── USCgamma_tree.nwk
-├── EPA_output/             # Pipeline 2 outputs
-│   ├── USC_ref_combined.fasta
-│   └── <SAMPLE>/
-│       ├── epa_alpha_output/
-│       └── epa_gamma_output/
-└── logs/                   # PBS job logs
-```
+├── scripts/         
+├── results/         
+│   ├── fastree_output/
+│   └── EPA_output/
+├── pmoa_reads/       
+├── logs/            
+└── README.md
+
+---
+
+## References
+
+- **EPA-ng**: Barbera et al. (2019) *Syst Biol* 68(2):365-369  
+  https://github.com/Pbdas/epa-ng
+- **FrameBot**: Wang et al. (2013) *Bioinformatics* 29(13):1710-1712  
+  https://github.com/rdpstaff/RDPTools
+- **MAFFT**: Katoh & Standley (2013) *Mol Biol Evol* 30(4):772-780
+- **FastTree**: Price et al. (2010) *PLOS ONE* 5(3):e9490
+
+---
+
+## Contact
+
+For questions about this pipeline:
+- jc224@ic.ac.uk
+- Imperial College London HPC: https://www.imperial.ac.uk/admin-services/ict/self-service/research-support/rcs/
+
+---
+
+**Version History:**
+- **v1.0** (Mar 2026): Initial pipeline with 5-step placement
+- **v1.1** (Apr 2026): Added MAFFT alignment + EPA-ng split (Steps 5-6); fixed ref-msa bug
+- **v1.2** (Apr 2026): Reorganized directory structure into scripts/, docs/, results/, archive/
+- **v1.3** (Apr 2026): Moved EPA_output and fastree_output under results/ for better organization

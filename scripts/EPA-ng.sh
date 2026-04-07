@@ -21,9 +21,9 @@ if [ -z "${SAMPLE}" ]; then
 fi
 
 RDPTOOLS=/rds/general/user/jc224/home/RDPTools
-SHARED_OUTDIR=/rds/general/user/jc224/home/pmoA_output/EPA_output
+SHARED_OUTDIR=/rds/general/user/jc224/home/pmoA_output/results/EPA_output
 export OUTDIR=${SHARED_OUTDIR}/${SAMPLE}
-FASTREE_DIR=/rds/general/user/jc224/home/pmoA_output/fastree_output
+FASTREE_DIR=/rds/general/user/jc224/home/pmoA_output/results/fastree_output
 INPUT=/rds/general/user/jc224/home/pmoA_output/pmoa_reads/${SAMPLE}_pmoA.fasta
 
 REF_ALPHA_MSA=${FASTREE_DIR}/USCalpha_ref_aligned.fasta
